@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Survive With U Money</title>
+    <meta
+      name="description"
+      content="Aplikasi tantangan survive dengan uang terbatas dalam 24 jam"
+    />
+    <meta name="theme-color" content="#0f9d58" />
+
+    <link rel="manifest" href="manifest.json" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="48x48"
+      href="icons/launchericon-48x48.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="192x192"
+      href="icons/launchericon-192x192.png"
+    />
+
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>Survive With U <span>Money</span></h1>
+      <p class="tagline">Tantangan hidup hemat dalam 24 jam</p>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="challenge">Tantangan</button>
+      <button class="tab-btn" data-tab="history">Riwayat</button>
+    </nav>
+
+    <main>
+      <!-- ================= TAB: TANTANGAN ================= -->
+      <section id="challenge" class="tab-content active">
+        <!-- Form mulai tantangan (muncul kalau belum ada tantangan aktif hari ini) -->
+        <div id="start-form-wrapper" class="card hidden">
+          <h2>Mulai Tantangan Baru</h2>
+          <p class="muted">
+            Masukkan jumlah uang yang mau kamu pakai untuk 24 jam ke depan.
+          </p>
+          <form id="start-form">
+            <label for="start-amount">Jumlah Uang (Rp)</label>
+            <input
+              type="number"
+              id="start-amount"
+              min="1"
+              placeholder="Contoh: 30000"
+              required
+            />
+            <button type="submit" class="btn btn-primary">
+              Mulai Tantangan
+            </button>
+          </form>
+        </div>
+
+        <!-- Info kalau belum bisa mulai tantangan baru -->
+        <div id="locked-info" class="card hidden">
+          <h2>Tantangan Hari Ini Sudah Dimulai</h2>
+          <p class="muted">
+            Kamu baru bisa memulai tantangan baru setelah tanggal berganti.
+          </p>
+        </div>
+
+        <!-- Tampilan tantangan aktif -->
+        <div id="active-challenge" class="card hidden">
+          <h2>Tantangan Berjalan</h2>
+
+          <div class="balance-box">
+            <span class="balance-label">Sisa Uang</span>
+            <span id="remaining-amount" class="balance-value">Rp 0</span>
+            <div class="progress-track">
+              <div id="progress-bar" class="progress-fill"></div>
+            </div>
+            <span id="spent-info" class="muted small"></span>
+          </div>
+
+          <div id="money-empty-msg" class="alert hidden">
+            Uang kamu sudah habis! Tantangan hari ini selesai. Tunggu besok
+            untuk mulai lagi.
+          </div>
+
+          <form id="expense-form">
+            <label for="item-name">Nama Barang / Pengeluaran</label>
+            <input
+              type="text"
+              id="item-name"
+              placeholder="Contoh: Nasi goreng"
+              required
+            />
+
+            <label for="item-price">Harga (Rp)</label>
+            <input
+              type="number"
+              id="item-price"
+              min="1"
+              placeholder="Contoh: 12000"
+              required
+            />
+
+            <button type="submit" class="btn btn-primary">
+              Catat Pengeluaran
+            </button>
+          </form>
+
+          <h3>Riwayat Transaksi Hari Ini</h3>
+          <ul id="transaction-list" class="transaction-list">
+            <li class="muted small">Belum ada transaksi.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ================= TAB: RIWAYAT ================= -->
+      <section id="history" class="tab-content">
+        <h2>Riwayat Tantangan</h2>
+        <div id="history-list" class="history-list">
+          <p class="muted">Belum ada riwayat tantangan.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <p>Data disimpan otomatis di perangkat kamu.</p>
+    </footer>
+
+    <script src="js/app.js"></script>
+  </body>
+</html>
