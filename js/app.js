@@ -1,6 +1,7 @@
 // ============ KONFIGURASI STORAGE ============
 const KEY_CURRENT = "swum_current_challenge";
 const KEY_HISTORY = "swum_history";
+const MAX_EDITS = 2;
 
 // ============ ELEMENT REFERENCES ============
 const tabButtons = document.querySelectorAll(".tab-btn");
@@ -25,6 +26,15 @@ const transactionListEl = document.getElementById("transaction-list");
 
 const historyListEl = document.getElementById("history-list");
 
+const toggleEditAmountBtn = document.getElementById("toggle-edit-amount");
+const editQuotaInfo = document.getElementById("edit-quota-info");
+const editAmountForm = document.getElementById("edit-amount-form");
+const newStartAmountInput = document.getElementById("new-start-amount");
+const cancelEditAmountBtn = document.getElementById("cancel-edit-amount");
+
+const backupBtn = document.getElementById("backup-btn");
+const restoreInput = document.getElementById("restore-input");
+
 // ============ HELPER ============
 function todayString() {
   const d = new Date();
@@ -42,9 +52,19 @@ function formatRupiah(num) {
   }).format(num);
 }
 
+function getTotalSpent(challenge) {
+  return challenge.transactions.reduce((sum, t) => sum + t.price, 0);
+}
+
 function getCurrentChallenge() {
   const raw = localStorage.getItem(KEY_CURRENT);
-  return raw ? JSON.parse(raw) : null;
+  if (!raw) return null;
+  const data = JSON.parse(raw);
+  // Migrasi data lama yang belum punya editCount
+  if (typeof data.editCount !== "number") {
+    data.editCount = 0;
+  }
+  return data;
 }
 
 function saveCurrentChallenge(data) {
@@ -66,10 +86,7 @@ function saveHistory(historyArr) {
 
 function archiveChallenge(challenge) {
   const history = getHistory();
-  const totalSpent = challenge.transactions.reduce(
-    (sum, t) => sum + t.price,
-    0,
-  );
+  const totalSpent = getTotalSpent(challenge);
 
   history.unshift({
     date: challenge.date,
@@ -81,6 +98,12 @@ function archiveChallenge(challenge) {
 
   saveHistory(history);
   clearCurrentChallenge();
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
 }
 
 // ============ TAB SWITCHING ============
@@ -131,14 +154,12 @@ function showActiveChallenge(challenge) {
   lockedInfo.classList.add("hidden");
   activeChallengeBox.classList.remove("hidden");
 
+  editAmountForm.classList.add("hidden");
   renderActiveChallengeDetails(challenge);
 }
 
 function renderActiveChallengeDetails(challenge) {
-  const totalSpent = challenge.transactions.reduce(
-    (sum, t) => sum + t.price,
-    0,
-  );
+  const totalSpent = getTotalSpent(challenge);
   const percentLeft = Math.max(
     0,
     Math.min(100, (challenge.remaining / challenge.startAmount) * 100),
@@ -156,7 +177,6 @@ function renderActiveChallengeDetails(challenge) {
     transactionListEl.innerHTML =
       '<li class="muted small">Belum ada transaksi.</li>';
   } else {
-    // tampilkan terbaru di atas
     [...challenge.transactions].reverse().forEach((t) => {
       const li = document.createElement("li");
       li.innerHTML = `<span>${escapeHtml(t.name)}</span><span class="item-price">- ${formatRupiah(
@@ -166,7 +186,7 @@ function renderActiveChallengeDetails(challenge) {
     });
   }
 
-  // Kalau uang habis, kunci form
+  // Kalau uang habis, kunci form pengeluaran
   if (challenge.remaining <= 0) {
     moneyEmptyMsg.classList.remove("hidden");
     itemNameInput.disabled = true;
@@ -178,12 +198,17 @@ function renderActiveChallengeDetails(challenge) {
     itemPriceInput.disabled = false;
     expenseForm.querySelector("button").disabled = false;
   }
-}
 
-function escapeHtml(str) {
-  const div = document.createElement("div");
-  div.textContent = str;
-  return div.innerHTML;
+  // Info kuota edit nominal
+  const editsLeft = MAX_EDITS - challenge.editCount;
+  if (editsLeft > 0) {
+    editQuotaInfo.textContent = `Sisa ${editsLeft}x edit hari ini`;
+    toggleEditAmountBtn.disabled = false;
+  } else {
+    editQuotaInfo.textContent = "Batas edit hari ini sudah habis";
+    toggleEditAmountBtn.disabled = true;
+    editAmountForm.classList.add("hidden");
+  }
 }
 
 // ============ FORM: MULAI TANTANGAN ============
@@ -198,6 +223,7 @@ startForm.addEventListener("submit", (e) => {
     startAmount: amount,
     remaining: amount,
     transactions: [],
+    editCount: 0,
   };
 
   saveCurrentChallenge(newChallenge);
@@ -231,6 +257,53 @@ expenseForm.addEventListener("submit", (e) => {
 
   saveCurrentChallenge(current);
   expenseForm.reset();
+  renderActiveChallengeDetails(current);
+});
+
+// ============ EDIT NOMINAL AWAL ============
+toggleEditAmountBtn.addEventListener("click", () => {
+  const current = getCurrentChallenge();
+  if (!current || current.editCount >= MAX_EDITS) return;
+
+  newStartAmountInput.value = current.startAmount;
+  editAmountForm.classList.toggle("hidden");
+});
+
+cancelEditAmountBtn.addEventListener("click", () => {
+  editAmountForm.classList.add("hidden");
+});
+
+editAmountForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+
+  const current = getCurrentChallenge();
+  if (!current) return;
+
+  if (current.editCount >= MAX_EDITS) {
+    alert("Batas edit nominal hari ini sudah habis.");
+    return;
+  }
+
+  const newAmount = parseInt(newStartAmountInput.value, 10);
+  if (!newAmount || newAmount <= 0) return;
+
+  const totalSpent = getTotalSpent(current);
+
+  if (newAmount < totalSpent) {
+    alert(
+      `Nominal baru tidak boleh lebih kecil dari total yang sudah dibelanjakan (${formatRupiah(
+        totalSpent,
+      )}).`,
+    );
+    return;
+  }
+
+  current.startAmount = newAmount;
+  current.remaining = newAmount - totalSpent;
+  current.editCount += 1;
+
+  saveCurrentChallenge(current);
+  editAmountForm.classList.add("hidden");
   renderActiveChallengeDetails(current);
 });
 
@@ -273,6 +346,70 @@ function renderHistory() {
     historyListEl.appendChild(card);
   });
 }
+
+// ============ BACKUP & RESTORE ============
+backupBtn.addEventListener("click", () => {
+  const backupData = {
+    app: "survive-with-u-money",
+    backupVersion: 1,
+    exportedAt: new Date().toISOString(),
+    currentChallenge: getCurrentChallenge(),
+    history: getHistory(),
+  };
+
+  const blob = new Blob([JSON.stringify(backupData, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `survive-backup-${todayString()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+restoreInput.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      const data = JSON.parse(event.target.result);
+
+      if (data.app !== "survive-with-u-money") {
+        alert("File ini bukan file backup Survive With U Money yang valid.");
+        return;
+      }
+
+      const confirmRestore = confirm(
+        "Memulihkan data ini akan MENGGANTI semua data yang ada sekarang (tantangan aktif & riwayat). Lanjutkan?",
+      );
+      if (!confirmRestore) return;
+
+      if (data.currentChallenge) {
+        saveCurrentChallenge(data.currentChallenge);
+      } else {
+        clearCurrentChallenge();
+      }
+
+      saveHistory(Array.isArray(data.history) ? data.history : []);
+
+      alert("Data berhasil dipulihkan!");
+      renderChallengeTab();
+      renderHistory();
+    } catch (err) {
+      alert("Gagal membaca file backup. Pastikan file JSON valid.");
+    }
+  };
+  reader.readAsText(file);
+
+  // reset input supaya bisa upload file yang sama lagi kalau perlu
+  e.target.value = "";
+});
 
 // ============ INIT ============
 document.addEventListener("DOMContentLoaded", () => {

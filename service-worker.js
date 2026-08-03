@@ -1,4 +1,4 @@
-const CACHE_NAME = "survive-with-u-money-v1";
+const CACHE_NAME = "survive-with-u-money-v3";
 const FILES_TO_CACHE = [
   "./index.html",
   "./css/style.css",

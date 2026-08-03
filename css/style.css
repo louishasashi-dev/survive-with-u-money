@@ -165,6 +165,25 @@ form input:focus {
   cursor: not-allowed;
 }
 
+.btn-secondary {
+  background: #eef1ef;
+  color: var(--color-text);
+}
+
+.btn-small {
+  width: auto;
+  flex: 1;
+  padding: 10px;
+  margin-top: 0;
+  font-size: 0.9rem;
+}
+
+.file-label {
+  display: block;
+  text-align: center;
+  cursor: pointer;
+}
+
 .balance-box {
   text-align: center;
   padding: 10px 0 6px;
@@ -197,6 +216,42 @@ form input:focus {
   width: 100%;
   background: var(--color-primary);
   transition: width 0.3s ease;
+}
+
+.edit-amount-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px 0 4px;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-primary-dark);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.link-btn:disabled {
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+
+.inline-edit-form {
+  background: #f7faf8;
+  border: 1px dashed var(--color-border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.inline-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .alert {
